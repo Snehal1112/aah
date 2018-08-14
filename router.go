@@ -44,15 +44,19 @@ func CORSMiddleware(ctx *Context, m *Middleware) {
 	ctx.Reply().HeaderAppend(ahttp.HeaderVary, ahttp.HeaderOrigin)
 
 	// CORS OPTIONS request
-	if ctx.Req.Method == ahttp.MethodOptions &&
-		ctx.Req.Header.Get(ahttp.HeaderAccessControlRequestMethod) != "" {
-		handleCORSPreflight(ctx)
-		return
+	if ctx.Req.Method == ahttp.MethodOptions {
+		if h := ctx.Req.Header[ahttp.HeaderAccessControlRequestMethod]; len(h) > 0 && len(h[0]) > 0 {
+			handleCORSPreflight(ctx)
+			return
+		}
 	}
 
 	// CORS headers
 	cors := ctx.route.CORS
-	origin := ctx.Req.Header.Get(ahttp.HeaderOrigin)
+	var origin string
+	if h := ctx.Req.Header[ahttp.HeaderOrigin]; len(h) > 0 {
+		origin = h[0]
+	}
 	if cors.IsOriginAllowed(origin) {
 		ctx.Reply().Header(ahttp.HeaderAccessControlAllowOrigin, origin)
 	}
@@ -79,7 +83,10 @@ func handleCORSPreflight(ctx *Context) {
 	cors := ctx.route.CORS
 
 	// Check Origin
-	origin := ctx.Req.Header.Get(ahttp.HeaderOrigin)
+	var origin string
+	if h := ctx.Req.Header[ahttp.HeaderOrigin]; len(h) > 0 {
+		origin = h[0]
+	}
 	if cors.IsOriginAllowed(origin) {
 		ctx.Reply().Header(ahttp.HeaderAccessControlAllowOrigin, origin)
 	} else {
@@ -90,7 +97,10 @@ func handleCORSPreflight(ctx *Context) {
 	}
 
 	// Check Method
-	method := ctx.Req.Header.Get(ahttp.HeaderAccessControlRequestMethod)
+	var method string
+	if h := ctx.Req.Header[ahttp.HeaderAccessControlRequestMethod]; len(h) > 0 {
+		method = h[0]
+	}
 	if cors.IsMethodAllowed(method) {
 		ctx.Reply().Header(ahttp.HeaderAccessControlAllowMethods, strings.Join(cors.AllowMethods, ", "))
 	} else {
@@ -101,7 +111,10 @@ func handleCORSPreflight(ctx *Context) {
 	}
 
 	// Check Headers
-	hdrs := ctx.Req.Header.Get(ahttp.HeaderAccessControlRequestHeaders)
+	var hdrs string
+	if h := ctx.Req.Header[ahttp.HeaderAccessControlRequestHeaders]; len(h) > 0 {
+		hdrs = h[0]
+	}
 	if cors.IsHeadersAllowed(hdrs) {
 		if len(cors.AllowHeaders) > 0 {
 			ctx.Reply().Header(ahttp.HeaderAccessControlAllowHeaders, strings.Join(cors.AllowHeaders, ", "))
